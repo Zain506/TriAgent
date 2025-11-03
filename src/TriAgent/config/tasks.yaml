@@ -1,9 +1,8 @@
-# TriAgent Pipeline
+# /src/TriAgent/config/tasks.yaml
+# Define tasks one by one --> Most time spent here
 
 
-
-
-gen_b1:
+B1: # Initial dialogue with user to clarify problem
   description: >
     Engage in dialogue with the user to clarify their exact problem statement, including:
       - Patient constraints,
@@ -11,99 +10,73 @@ gen_b1:
       - Patient medical data,
       - Current biomarkers, readings and lab results already available for the patient
   expected_output: >
-    String of markdown text representing a report
+    A report of the user's query including the constraints and specifity.
 
 
-
-
-
-
-
-parse_to_data_scientist:
-  # Use info from dialogue to pass relevant info to data scientist
-  #
-  context: [gen_b1]
+Communicate_DatSci: # Use info from dialogue to pass relevant info to data scientist
+  context: [B1]
   description: >
     Use the context to communicate the current problem and information to a data scientist.
     They will use this information to search databases and analyse the data
+    Clarify the clinical data to perform data analysis
   expected_output: >
-    Markdown text report for the data scientist to use for their research
+    A report using the clinical data that informs a Data Scientist on the relevant features to analyse.
+    This report should be able to inform a data scientist how to run the following.
+    1. Feature Engineering
+    2. Data preprocessing
+    3. Machine Learning model training
 
-    
 
 
-
-
-get_datasets: # Requires tool to access database(s)
-  context: [parse_to_data_scientist]
+EDA: # Exploratory data analysis
+  context: [Communicate_DatSci]
   description: >
-    Out of all the datasets you have access to, find the ones which you can perform EDA on.
-    Identify the ones with the same features that we have described.
-    Make sure the ones you show us have a ground truth label corresponding to what we think the condition is (if provided)
+    Perform Exploratory Data Analysis on the data. 
+    Obtain summary statistics to obtain various metrics that are relevant to our problem.
   expected_output: >
-    Array of strings or indices which index the datasets we can analyse
+    Summary of data distributions and descriptive statistics. Detailed enough to run an AutoML pipeline
+  
 
 
-
-
-
-
-eda: # Exploratory data analysis
-  context: [get_datasets, parse_to_data_scientist]
+AutoML: # Run AutoML pipeline. May require extra LLM layer/task to interpret requirements from EDA and Communicate_DatSci.
+  context: [EDA, Communicate_DatSci]
   description: >
-    Perform Exploratory Data Analysis on the data. Obtain summary statistics to obtain various metrics that are relevant to our problem.
+    Run an AutoML tool on the data with the knowledge we have from the patient.
+    Find the best ML model to fit the data, and return the weights of each biomarker found from the dataset
   expected_output: >
-    A report of the data, including all relevant statistics and all information that a data scientist can use to preprocess the data.
+    The most optimal ML model for the data  according to the AutoML pipeline.
+    Also a set of the candidate biomarkers that could help predict the target feature.
+    Include each biomarker's corresponding importance score according to the model.
 
 
-
-
-
-
-preprocess:
-  context: [eda, parse_to_data_scientist]
+B2: # Generate statistical report of each biomarker in predicting the target feature
+  context: [AutoML]
   description: >
-    Preprocess the data, including standardisation, normalisation, autotask detection, random train/valid/test set splitting, hyperparameter tuning, model training and selection, and explainability analysis (eg feature importance, SHAP values) by calling a AutoML pipeline
+    Generate a report of the most significant features that determine the output of the model. 
+    Also include their respective weights.
   expected_output: >
-    A Model object in Python - with all parameters included - of the optimal model according to the AutoML pipeline.
-    And include the most important features according to model, as well as a normalised importance weighting for each.
+    A list of the most descriptive biomarkers to predict the target feature:
+      1. Biomarker 1: Weight 1
+      2. Biomarker 2: Weight 2
+      .
+      .
+      .
+      N. Biomarker N: Weight N
 
 
-
-
-
-
-
-gen_b2:
-  context: [preprocess]
+Plan_Research: # Generate queries for research
+  context: [B1, B2]
   description: >
-    Generate a report of the most significant features that determine the output of the model. Also include their respective weights.
+    Using the provided context, create a suitable query for each biomarker.
+    This query will be used to perform RAG and collect clinical, academic evidence from our knowledge base
   expected_output: >
-    Markdown report as a string
+    Array of strings with each string being a query used to search a knowledge base.
+    ["query 1", "query 2", ..., "query N"] for N queries/biomarkers.
 
 
 
-
-
-
-
-
-gen_research_brief:
-  context: [gen_b2, gen_b1]
-  description: >
-    Using the provided context, create a suitable query for each biomarker that could help our patient. This query will be used to perform RAG and collect evidence in support of it - to investigate how well-researched each biomarker is.
-  expected_output: >
-    Array of strings with each string being a query used to search a knowledge base
-
-
-
-
-
-
-
-
-research_knowledge_base: # Entirely tool-based, no agent
-  context: [gen_research_brief]
+Research: # Requires RAG capability and access to knowledge base
+  context: [Plan_Research]
   description: >
     Using the research brief, research each query in the knowledge base to find the best fits across the vector database
   expected_output: >
@@ -116,13 +89,8 @@ research_knowledge_base: # Entirely tool-based, no agent
     }
 
 
-
-
-
-
-
-clean_json:
-  context: [research_knowledge_base]
+Clean_Research: # Use LLM to examine evidence for each query and deduplicate
+  context: [Research]
   description: >
     Deduplicate the JSON from any evidence or queries that are shared. Clean and tidy it up from any irrelevant points.
   expected_output: >
@@ -135,30 +103,26 @@ clean_json:
     }
 
 
-
-
-
-
-get_sim:
-  context: [clean_json]
+Compute_Similarity: # Manually defined custom tool to convert research JSON to tensor. Requires PyTorch
+  context: [Clean_Research]
   description: >
     Generate similarity matrix from the JSON
   expected_output: >
     Tensor
 
 
-
-
-
-
-
-
-get_high_points:
-  context: [get_sim]
+Evaluate_Research: # Generate a report given the evidence for each biomarker
+  context: [B2, Clean_Research, Compute_Similarity]
   description: >
-    Inspect the similarity matrix and retrieve all high points (and their respective evidences)
-    From these points, generate a report of the biomarkers, their similarity scores and the evidence in support of them.
-    Classify whether each biomarker is an already established biomarker for our purposes, or a novel one with little realistic evidence in support of it (indicating it may be one to research in the future)
+    Inspect the similarity matrix and split them into 2 groups: 
+    1. Biomarkers with established evidence
+    2. Biomarkers with novel evidence
+    Use the evidence from the Similarity Matrix {Compute_Similarity} and the statistical knowledge {B2}.
+    Also use the actual text in {Clean_Research} to confirm this.
   expected_output: >
-    Markdown report of all biomarkers, classifying whether each one is novel or already established in medical literature.
+    Markdown report with 2 sections: 1 for each category of evidence in support of the biomarker.
+    Provide the following for each biomarker:
+      1. The name of the biomarker.
+      2. Statistical evidence in support of the biomarker - The weighting of the feature.
+      3. Academic evidence in support of the biomarker - Quotations directly from the text.
 
