@@ -1,16 +1,35 @@
-# Tri-Agent Workflow
+# TriAgent: Agentic AI for Healthcare Triage
 
-## Introduction
+An open-source agentic AI system that assists healthcare workers in triage, diagnosis and decision support - designed for deployment in low-resource or disconnected environments.
 
-This project aims to implement the Tri-Agent workflow introduced in the following [paper](https://arxiv.org/pdf/2510.16080).
-The Tri-Agent workflow aims to improve on the current triage system in many emergency departments around the world. 
+## Tech Stack
 
-While TriAgent uses LangGraph and LangChain, we aim to use a newer tool called CrewAI.
+- Framework: CrewAI for agent orchestration and task flow
+- Models: Open-source LLMs from Hugging Face Transformers
+- Tools:
+    - Retrieval-Augmented Generation (RAG) for medical knowledge retrieval
+    - AutoML for immediate Biomarker identification
+    - Core matrix/tensor ops
 
-Instead of completely re-implementing this pipeline (which is more aimed at identifying new biomarkers that aren't currently used), this pipeline aims to be a deployable model that recommends the biomarkers that should be taken from a patient, given their history and their current readings.
+## Core Workflow
+
+```plaintext
+[Agent converses with user] 
+-> [Identify significant features in medical databases/biobanks] 
+-> [Perform AutoML to identify most significant biomarkers] 
+-> [Research journals for evidence] 
+-> [Split biomarkers into established and novel]
+```
 
 ![Diagram](dev/diagram.png)
 
+## Objectives
+
+- Enable a modular, research-oriented AI triage assistant to support emergency departments.
+- Enable intelligent query and search capability with advanced retrieval and reasoning pipelines.
+- Reduce the risk of misdiagnosis with evidence-based insights.
+- Make performance of open-source models similar to proprietary LLMs in this task.
+- Maintain safe and appropriate data and privacy practices.
 
 ## Installation
 
@@ -20,11 +39,15 @@ Install the [uv](https://docs.astral.sh/uv/#highlights) package manager. Then:
 uv sync
 ```
 
+
 For development,
 ```bash
 uv sync --all-extras
 ```
 
-# Development
+## Current Status
 
-Development notes, brainstorming and ideation found in the dev/ folder
+- Task definition complete
+- Agent definition complete
+- Tool definition incomplete
+- Model benchmarking incomplete
