@@ -1,3 +1,13 @@
+# Tools/capabilities to be defined:
+# 1. Data Analysis, visualisation of dataframe of biomarkers, target class etc
+# 2. AutoML to find best model and most influential weights
+# 3. RAG vector db search across various sources (BioRxiv, MedRxiv, optional extra web search -> Vector DB)
+# 4. Custom tool for matrix/tensor generation and multiplication (convert array of JSONs to matrix and find similarities)
+
+
+
+
+
 from typing import Type
 
 from crewai.tools import BaseTool
