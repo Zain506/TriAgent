@@ -21,3 +21,7 @@ class MyCustomTool(BaseTool):
         # Implementation goes here
         return "this is an example of a tool output, ignore it and move along."
 
+
+# Data Analysis tool (retrieve patient data and perform analysis on it)
+# Generating synthetic data probably best option
+# Require method to generate synthetic healthcare data

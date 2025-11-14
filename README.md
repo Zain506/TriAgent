@@ -47,7 +47,7 @@ uv sync --all-extras
 
 ## Current Status
 
-- Task definition complete
-- Agent definition complete
-- Tool definition incomplete
-- Model benchmarking incomplete
+- Need to build a generative model to create synthetic data
+- Generative model needs to include all sorts of biomarkers without discrimination
+- To reduce latency we may require it to filter the ICD codes being considered
+- This will be used for the rest of the agentic framework to use instead of existing health records

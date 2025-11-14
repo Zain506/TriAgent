@@ -26,7 +26,14 @@ Communicate_DatSci: # Use info from dialogue to pass relevant info to data scien
     2. Data preprocessing
     3. Machine Learning model training
 
-
+Data_Synthesis: # Requires a generative model as a tool: Requires dynamically defining features
+  context: [B1]
+  description: >
+    Use the context to generate a dataset with relevant features.
+    Leverage the generative model to do so, with relevant features.
+  expected_output: >
+    A CSV file with a few thousand rows of synthetic patient data.
+    This patient data contains all sorts of biomarkers and relevant diseases with their ICD codes
 
 EDA: # Exploratory data analysis
   context: [Communicate_DatSci]
